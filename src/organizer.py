@@ -323,7 +323,7 @@ class OnePaceOrganizer:
             self.plexapi_server = None
             self.plex_config_auth_token = ""
 
-        if self.plexapi_account is None and self.plexapi_server is None and self.mode != 2 and self.plex_config_auth_token != "" and self.plex_config_remember:
+        if self.plexapi_account is None and self.plexapi_server is None and self.mode != 2 and self.plex_config_auth_token != "":
             try:
                 if self.plex_config_url == "":
                     self.plexapi_account = await utils.run(MyPlexAccount, token=self.plex_config_auth_token)
@@ -526,6 +526,17 @@ class OnePaceOrganizer:
     async def plex_get_servers(self):
         self.plex_config_servers = {}
 
+        if self.plexapi_server is None and self.plexapi_account is None:
+            await self.plex_login()
+
+        if self.plexapi_server is not None:
+            self.plex_config_servers[self.plexapi_server.machineIdentifier] = {
+                "name": self.plexapi_server.friendlyName,
+                "selected": True
+            }
+            self.plex_config_server_id = self.plexapi_server.machineIdentifier
+            return True
+
         if self.plexapi_server is None and self.plex_config_url != "" and (self.plexapi_account is not None or self.plex_config_auth_token != ""):
             try:
                 self.plexapi_server = await utils.run(
@@ -617,6 +628,13 @@ class OnePaceOrganizer:
         if server_id == "" or server_id is None:
             self.logger.error("Plex server is blank")
             return False
+
+        if self.plexapi_server is None and self.plexapi_account is None:
+            await self.plex_login()
+
+        if self.plexapi_server is not None and self.plexapi_server.machineIdentifier == server_id:
+            self.plex_config_server_id = server_id
+            return True
 
         if self.plex_config_url != "" and (self.plex_config_auth_token != "" or self.plexapi_account is not None):
             try:
